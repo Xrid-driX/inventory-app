@@ -1,5 +1,5 @@
 const express = require("express");
-const db = require("../db.js");
+// const db = require("../db.js");
 const router = express.Router();
 const Product = require("../models/product.js")
 
@@ -35,39 +35,35 @@ router.get("/", async (req, res) => {
     }
   });
 
-//Add product
-router.post ("/", (req, res) => {
-    const { name, quantity, date } = req.body;
-    db.run(
-        `INSERT INTO products (name, quantity, date) VALUES (?, ?, ?)`,
-        [name, quantity, date],
-        function (err) {
-            if (err) return res.status(500).json ({ error: err.message});
-            res.json({ id: this.lastID, name, quantity, date });
-        }
-    );
+// Update Inventory qty by ID
+router.put("/update/:id", async (req, res) => {
+    try {
+        const { invQty } = req.body;
+        const product = await Product.findByIdAndUpdate(
+            req.params.id,
+            { $set: { invQty, date: new Date() } },
+            { new: true }
+        );
+
+        if (!product) return res.status(404).json({ message: "Item not found" });
+        res.json({ message: "Inventory updated!", product });
+        
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-//Update product
-router.put("/:id", (req, res) => {
-    const { id } = req=params;
-    const { name,quantity, date } = req.body;
-    db.run(
-        `UPDATE products SET name=?, quantity=?, date=? WHERE id=?`, 
-        [name, quantity, date, id],
-        function (err) {
-            if(err) return res.status(500).json({ error: err.message });
-            res.json({ updated: this.changes });
-        }
-    );
+// Delete a product
+router.delete("/delete/:id", async (req, res) => {
+    try {
+        const product = await Product.findByIdAndUpdate(req.params.id);
+        if (!product) return res.status(404).json({ message: "Product not found!" });
+
+        res.json({ message: "product deleted" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Delete product
-router.delete("./:id", (req, res) => {
-    db.run(`DELETE FROM products WHERE id=?`, [req.params.id], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        req.json({ deleted: this.changes});
-    });
-});
 
 module.exports = router;
